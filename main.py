@@ -32,6 +32,24 @@ def deprocess_img(x):
     x = np.clip(x, 0, 255).astype('uint8')
     return x
 
+def content_loss(base, combination):
+    """コンテンツの損失関数"""
+    return K.sum(K.square(combination - base))
+
+def gram_matrix(x):
+    """補助関数　元の特徴量行列から抽出された相関関係のマップのためにグラム行列にする。"""
+    features = K.batch_flatten(k.permute_dimensions(x, (2, 0, 1)))
+    gram = K.dot(features, K.transpose(features))
+    return gram
+
+def style_loss(style, combination):
+    """スタイルの損失関数を定義"""
+    S = gram_matrix(style)
+    C = gram_matrix(combination)
+    channels = 3
+    size = img_height * img_width
+    return K.sum(K.square(S - C)) / (4. * (channels ** 2) * (size ** 2))
+    
 
 
 if __name__ == "__main__":
