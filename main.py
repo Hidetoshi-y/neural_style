@@ -49,7 +49,13 @@ def style_loss(style, combination):
     channels = 3
     size = img_height * img_width
     return K.sum(K.square(S - C)) / (4. * (channels ** 2) * (size ** 2))
-    
+
+def total_variation_loss(x):
+    """３つめの損失関数　全変動損失の定義　生成画像のピクセルを操作し、生成画像を空間的に連続させることで過度の画素化を回避　正則化損失関数である"""
+    a = K.square(x[:, :img_height - 1, :img_width -1, ;] - x[:, 1:, :img_width -1, :])
+    b = K.square(x[:, :img_height -1, :img_width -1, :] - x[:, :img_height - 1, 1:, :])
+    return K.sum(K.pow(a + b, 1.25))
+
 
 
 if __name__ == "__main__":
@@ -88,6 +94,49 @@ if __name__ == "__main__":
 
     model = vgg19.VGG19(input_tensor=input_tensor, weights='imagenet', include_top=False)
     print('Model loaded')
+
+    """
+    最小化の対象となる最終的な損失関数を定義
+    """
+
+    #層の名前を活性化テンソルにマッピングするディクショナリ
+    outputs_dict = dict([(layer.name, layer.output) for layer in model.layers])
+
+    content_layer = 'block5_conv2' # コンテンツの損失関数に使用する層の名前
+
+    style_layers = ['block1_conv1',
+                    'blobk2_conv1',
+                    'block3_conv1',
+                    'block4_conv1',
+                    'block5_conv1']
+    
+    #損失関数の荷重平均の重み
+    total_variation_weight = 1e-4
+    style_weight = 1.
+    content_weight = 0.025
+
+    #すべてのコンポーネントをこのスカラー変数に追加することで、損失関数を定義
+    loss = K.variable(0.)
+
+    #コンテンツの損失関数を追加
+    layer_features = outputs_dict[content_layer]
+    target_image_features = layer_features[0, :, :, :]
+    combination_features = layer_features[2, :, :, :]
+    loss += content_weight * content_loss(target_image_features, combination_features)
+
+    #各ターゲット層のスタイルの損失関数を追加
+    for layer_name in style_layers:
+        layer_features = outputs_dict[layer_name]
+        style_reference_features = layer_features[1, :, :, :]
+        combination_features = layer_features[2, :, :, :]
+        sl = style_loss(style_reference_features, combination_features)
+        lodd += (style_weight / len(style_layers)) * sl
+    
+    #全変動損失関数を追加
+    loss += total_variation_weight * total_variation_loss(combination_image)
+
+    """勾配降下のプロセスを定義
+    """
 
 
     
