@@ -2,10 +2,17 @@ from keras.preprocessing.image import load_img, img_to_array
 from keras.applications import vgg19
 from keras import backend as K
 import numpy as np
+from scipy.optimize import fmin_l_bfgs_b
+#from scipy.misc import imsave
+import imageio
+import time
+
 
 #定数の設定
 img_height = 400
 
+result_prefix = 'style_transfer_result'
+iterations = 20
 
 """
 VGG19ネットワークでやり取りされる画像の「読み込み」「前処理」「後処理」を行う補助関数
@@ -52,9 +59,13 @@ def style_loss(style, combination):
 
 def total_variation_loss(x):
     """３つめの損失関数　全変動損失の定義　生成画像のピクセルを操作し、生成画像を空間的に連続させることで過度の画素化を回避　正則化損失関数である"""
-    a = K.square(x[:, :img_height - 1, :img_width -1, ;] - x[:, 1:, :img_width -1, :])
+    a = K.square(x[:, :img_height - 1, :img_width -1, :] - x[:, 1:, :img_width -1, :])
     b = K.square(x[:, :img_height -1, :img_width -1, :] - x[:, :img_height - 1, 1:, :])
     return K.sum(K.pow(a + b, 1.25))
+
+
+
+        
 
 
 
@@ -137,9 +148,75 @@ if __name__ == "__main__":
 
     """勾配降下のプロセスを定義
     """
+    # 損失関数をもとに、生成された画像の勾配を取得
+    grads = K.gradients(loss, combination_image)[0]
 
+    # 現在の損失関数の値と勾配の値を取得するか関数
+    fetch_loss_and_grads = K.function([combination_image], [loss, grads])
 
     
+    """
+    Scipy の　L-BFGSアルゴリズムを使って　勾配上昇法を実行して
+    イテレーション毎に生成された画像を保存する
+    １イテレーションは勾配上昇法の20ステップに相当する
+    """
+
+    """
+    このクラスは、損失関数の値と勾配の値を２つのメソッド呼び出しを通じて取得できるように
+    fetch_loss_and_grads をラッピングする。 この２つのメソッド呼び出しは、ここで使用する
+    Scipyのオプティマイザによって要求される
+    """
+
+    class Evaluator(object):
+        def __init__(Self):
+            self.loss_value = None
+            self.grads_values = None
+        
+        def loss(self, x):
+            assert self.loss_value is None
+            x = x.reshape((1, img_height, img_width, 3))
+            outs = fetch_loss_and_grads([x])
+            loss_value = outs[0]
+            grads_values = outs[1].flatten().astype('float64')
+            self.loss_value = loss_value
+            self.grads_values = grads_values
+            return self.loss_value
+
+        def grads(self, x):
+            assert self.loss_value is not None
+            grads_values = np.copy(self.grads_values)
+            self.loss_value = None
+            self.grads_values = None
+            return grads_values
+        
+    evaluator = Evaluator()
+
+    # 初期状態：ターゲット画像
+    x = preprocess_image(target_image_path)
+
+    # 画像を平坦化：scipy.optimize.fmin_l_bは1次元ベクトルしか処理しない
+    x = x.flatten()
+
+    for i in range(iterations):
+        print('Start of itetation', i)
+
+        start_time = time.time()
+
+        """
+        ニューラルスタイル変換の損失関数を最小化するために、生成された画像のピクセルにわたって
+        L-BFGS最適化を実行。　損失関数を計算する関数と勾配を計算する関数を２つの別々の引数として
+        渡さなければならないことに注意
+        """
+
+        img = x.copy().reshape((img_height, img_width, 3))
+        img = deprocess_image(img)
+        fname = result_prefix + '_at_iteration_%d.png' % i
+        #imsave(fname, img)
+        imageio.imwrite(fname, img)
+        end_time = time.time()
+        print('Image saved as', fname)
+        print('Iteration %d completed in %ds' % (i, end_time - start_time))
+
 
 
     
