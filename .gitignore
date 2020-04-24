@@ -1,3 +1,4 @@
 input/
 output/
 .python-version
+error.log
