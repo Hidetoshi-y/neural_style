@@ -98,7 +98,7 @@ loss = K.variable(0.)
 layer_features = outputs_dict[content_layer]
 target_image_features = layer_features[0, :, :, :]
 combination_features = layer_features[2, :, :, :]
-loss += content_weight * content_loss(target_image_features,
+loss = content_weight * content_loss(target_image_features,
                                       combination_features)
 for layer_name in style_layers:
     layer_features = outputs_dict[layer_name]
