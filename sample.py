@@ -143,6 +143,7 @@ evaluator = Evaluator()
 
 from scipy.optimize import fmin_l_bfgs_b
 #from scipy.misc import imsave
+import imageio
 import time
 
 result_prefix = 'style_transfer_result'
