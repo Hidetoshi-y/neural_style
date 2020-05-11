@@ -61,3 +61,4 @@ practice_branchからの追記
 
 - master ブランチにfetchする
 
+結果　成功
