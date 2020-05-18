@@ -3,3 +3,4 @@ output/
 .python-version
 error.log
 env.log
+data/
