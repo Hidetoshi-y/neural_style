@@ -40,30 +40,6 @@ https://www.amazon.co.jp/Python%E3%81%A8Keras%E3%81%AB%E3%82%88%E3%82%8B%E3%83%8
 
 ｐ303より
 
-
-# gitのbranchを確認する。
-ここの加筆がmasterbranchでも確認できれば私の手法はあっている。
-
-# 練習の日課
-本日
-
-- 別ブランチを作成
-
-- 以下に追記
---------
-
-practice_branchからの追記
-
-
--------
-
-- pull&request
-
-- master ブランチにfetchする
-
-結果　成功
-
-
 ## 今後の予定
 
 モデルの出力＆利用
