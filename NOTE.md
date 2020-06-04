@@ -113,3 +113,6 @@ L2ノルムが使えるよ　と発見したのである。
 
 
 # 最終的にはWebブラウザから行けるようにしたい。
+
+## practice vi
+here practice vim 
